@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file>img/sevrov.png</file>
+        <file>img/sevsu.png</file>
+        <file>img/settings_icon.png</file>
+        <file>img/off_button_icon.png</file>
+        <file>img/on_button_icon.png</file>
+        <file>img/display_icon.png</file>
+        <file>img/camera_icon.png</file>
+        <file>img/video_icon.png</file>
+    </qresource>
+</RCC>

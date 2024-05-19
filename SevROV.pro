@@ -5,5 +5,6 @@ CONFIG += ordered
 SUBDIRS += \
     SevROVLibrary \
     SevROVEmulator \
-    SevROVControl
+    SevROVControl \
+    SevROVWorkstation
 
