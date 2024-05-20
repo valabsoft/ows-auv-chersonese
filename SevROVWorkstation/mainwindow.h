@@ -18,6 +18,10 @@ private:
     ApplicationSettings _appSet;
     SevROVController _sevROV;
 
+    void setSingleCameraLayout();
+    void setStereoCameraLayout();
+    void setConnectedCtrlStyle(bool isconnected = false);
+
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
