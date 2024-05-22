@@ -22,6 +22,8 @@ public:
     const int CAMERA_VIEW_Y0 = 10;
     const int CAMERA_VIEW_BORDER_WIDTH = 10;
     const int CONTROL_PANEL_WIDTH = 120;
+
+    const int VIDEO_TIMER_INTERVAL = 100;
 };
 
 #endif // APPLICATIONSETTINGS_H

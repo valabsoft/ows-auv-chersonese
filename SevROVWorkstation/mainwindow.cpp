@@ -27,7 +27,10 @@ MainWindow::MainWindow(QWidget *parent)
     setup_connected_controls_style(false);
 
     // Цвет фона главного окна приложения
-    this->setStyleSheet("background-color: black;");    
+    this->setStyleSheet("background-color: black;");
+
+    _videoTimer = new QTimer(this);
+    connect(_videoTimer, &QTimer::timeout, this, &MainWindow::on_video_timer);
 }
 
 MainWindow::~MainWindow()
@@ -45,11 +48,15 @@ void MainWindow::on_pbStartStop_clicked()
     {
         ui->pbStartStop->setIcon(QIcon(":/img/on_button_icon.png"));
         ui->pbStartStop->setIconSize(QSize(64, 64));
+
+        setup_camera_connection(CameraConnection::ON);
     }
     else
     {
         ui->pbStartStop->setIcon(QIcon(":/img/off_button_icon.png"));
         ui->pbStartStop->setIconSize(QSize(64, 64));
+
+        setup_camera_connection(CameraConnection::OFF);
     }
 
     setup_connected_controls_style(_sevROV.isConnected);
@@ -204,4 +211,140 @@ void MainWindow::setup_connected_controls_style(bool isconnected)
                                             "border-color: silver; "
                                             "}");
     }
+}
+
+void MainWindow::setup_camera_connection(CameraConnection connection)
+{
+    int camID = 0;
+    int camIDL = 0;
+    int camIDR = 0;
+
+    switch (connection)
+    {
+    case CameraConnection::ON:
+
+        // Выделяем ресурсы
+        //switch (_sevROV.cameraView)
+        //{
+        //case CameraView::MONO:
+        //    _webCam = new cv::VideoCapture(camID);
+        //    break;
+        //case CameraView::STEREO:
+        //    _webCamL = new cv::VideoCapture(camIDL);
+        //    _webCamR = new cv::VideoCapture(camIDR);
+        //    break;
+        //default:
+        //    break;
+        //}
+
+        _webCamO = new cv::VideoCapture(camID);
+        _webCamL = new cv::VideoCapture(camIDL);
+        _webCamR = new cv::VideoCapture(camIDR);
+
+        // Запускаем таймер
+        if (!_videoTimer->isActive())
+            _videoTimer->start(_appSet.VIDEO_TIMER_INTERVAL);
+
+        break;
+    case CameraConnection::OFF:
+
+        // Освобождаем ресурсы
+        if (_webCamO->isOpened())
+            _webCamO->release();
+        if (_webCamL->isOpened())
+            _webCamL->release();
+        if (_webCamR->isOpened())
+            _webCamR->release();
+
+        // Остановка таймера
+        if (!_videoTimer->isActive())
+            _videoTimer->stop();
+
+        // Стереть старое изображение
+        QPixmap pixmap;
+        QColor color;
+
+        color = QColor(0, 0, 0, 255);
+        pixmap = QPixmap(ui->lbCamera->size());
+        pixmap.fill(color);
+        ui->lbCamera->setPixmap(pixmap);
+
+        pixmap = QPixmap(ui->lbCameraL->size());
+        pixmap.fill(color);
+        ui->lbCameraL->setPixmap(pixmap);
+        ui->lbCameraR->setPixmap(pixmap);
+
+        break;
+    }
+}
+void MainWindow::on_video_timer()
+{
+    cv::Mat resizedMatO;
+    cv::Mat resizedMatL;
+    cv::Mat resizedMatR;
+
+    switch (_sevROV.cameraView)
+    {
+    case CameraView::MONO:
+
+        _webCamO->read(_sourceMatO);
+
+        if (_sourceMatO.empty())
+            return;
+
+        cv::resize(_sourceMatO, resizedMatO, cv::Size(_appSet.CAMERA_WIDTH, _appSet.CAMERA_HEIGHT));
+
+        cv::cvtColor(resizedMatO, _destinationMatO, cv::COLOR_BGR2RGB);
+
+        _imgCamO = QImage((uchar*) _destinationMatO.data,
+                          _destinationMatO.cols,
+                          _destinationMatO.rows,
+                          _destinationMatO.step,
+                          QImage::Format_RGB888);
+
+        ui->lbCamera->setPixmap(QPixmap::fromImage(_imgCamO));
+        break;
+    case CameraView::STEREO:
+        ///////////////////////////////////////////////////////////////////////
+        // Left Camera
+        _webCamL->read(_sourceMatL);
+
+        if (_sourceMatL.empty())
+            return;
+
+        cv::resize(_sourceMatL, resizedMatL, cv::Size(_appSet.CAMERA_WIDTH / 2, _appSet.CAMERA_HEIGHT / 2));
+
+        cv::cvtColor(resizedMatL, _destinationMatL, cv::COLOR_BGR2RGB);
+
+        _imgCamL = QImage((uchar*) _destinationMatL.data,
+                          _destinationMatL.cols,
+                          _destinationMatL.rows,
+                          _destinationMatL.step,
+                          QImage::Format_RGB888);
+
+        ui->lbCameraL->setPixmap(QPixmap::fromImage(_imgCamL));
+
+        ///////////////////////////////////////////////////////////////////////
+        // Right Camera
+        _webCamR->read(_sourceMatR);
+
+        if (_sourceMatR.empty())
+            return;
+
+        cv::resize(_sourceMatR, resizedMatR, cv::Size(_appSet.CAMERA_WIDTH / 2, _appSet.CAMERA_HEIGHT / 2));
+
+        cv::cvtColor(resizedMatR, _destinationMatR, cv::COLOR_BGR2RGB);
+
+        _imgCamR = QImage((uchar*) _destinationMatR.data,
+                          _destinationMatR.cols,
+                          _destinationMatR.rows,
+                          _destinationMatR.step,
+                          QImage::Format_RGB888);
+
+        ui->lbCameraR->setPixmap(QPixmap::fromImage(_imgCamR));
+        break;
+    default:
+        break;
+    }
+
 }
