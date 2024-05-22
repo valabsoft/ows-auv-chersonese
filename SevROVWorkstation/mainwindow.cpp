@@ -40,8 +40,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->lbCameraR->setGeometry(10 + 320 + 10, 10, 320, 240);
 
     // Layout по умолчанию - одиночная камера
-    setSingleCameraLayout();
-    setConnectedCtrlStyle(false);
+    setup_camera_view_layout(CameraView::MONO);
+    setup_connected_controls_style(false);
 
     // Цвет фона главного окна приложения
     this->setStyleSheet("background-color: black;");    
@@ -69,7 +69,7 @@ void MainWindow::on_pbStartStop_clicked()
         ui->pbStartStop->setIconSize(QSize(64, 64));
     }
 
-    setConnectedCtrlStyle(_sevROV.isConnected);
+    setup_connected_controls_style(_sevROV.isConnected);
 }
 void MainWindow::on_pbView_clicked()
 {
@@ -77,39 +77,42 @@ void MainWindow::on_pbView_clicked()
     if (!_sevROV.isConnected)
         return;
 
-    switch (_sevROV.viewMode)
+    switch (_sevROV.cameraView)
     {
-    case ViewMode::SINGLE:
+    case CameraView::MONO:
         ui->pbView->setIcon(QIcon(":/img/video_icon.png"));
         ui->pbView->setIconSize(QSize(64, 64));
-        _sevROV.viewMode = ViewMode::STEREO;
+        _sevROV.cameraView = CameraView::STEREO;
 
-        setStereoCameraLayout();
         break;
-    case ViewMode::STEREO:
+    case CameraView::STEREO:
         ui->pbView->setIcon(QIcon(":/img/display_icon.png"));
         ui->pbView->setIconSize(QSize(64, 64));
-        _sevROV.viewMode = ViewMode::SINGLE;
-
-        setSingleCameraLayout();
+        _sevROV.cameraView = CameraView::MONO;
         break;
     default:
         break;
     }
+
+    setup_camera_view_layout(_sevROV.cameraView);
 }
-void MainWindow::setSingleCameraLayout()
+void MainWindow::setup_camera_view_layout(CameraView layouttype)
 {
-    ui->lbCamera->setVisible(true);
-    ui->lbCameraL->setVisible(false);
-    ui->lbCameraR->setVisible(false);
+    switch (layouttype)
+    {
+    case CameraView::MONO:
+        ui->lbCamera->setVisible(true);
+        ui->lbCameraL->setVisible(false);
+        ui->lbCameraR->setVisible(false);
+        break;
+    case CameraView::STEREO:
+        ui->lbCamera->setVisible(false);
+        ui->lbCameraL->setVisible(true);
+        ui->lbCameraR->setVisible(true);
+        break;
+    }
 }
-void MainWindow::setStereoCameraLayout()
-{
-    ui->lbCamera->setVisible(false);
-    ui->lbCameraL->setVisible(true);
-    ui->lbCameraR->setVisible(true);
-}
-void MainWindow::setConnectedCtrlStyle(bool isconnected)
+void MainWindow::setup_connected_controls_style(bool isconnected)
 {
     if (isconnected)
     {
@@ -164,4 +167,3 @@ void MainWindow::setConnectedCtrlStyle(bool isconnected)
                                             "}");
     }
 }
-

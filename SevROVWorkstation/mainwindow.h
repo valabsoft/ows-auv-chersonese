@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include "applicationsettings.h"
 #include "sevrovcontroller.h"
+#include "enumclasses.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -18,9 +19,8 @@ private:
     ApplicationSettings _appSet;
     SevROVController _sevROV;
 
-    void setSingleCameraLayout();
-    void setStereoCameraLayout();
-    void setConnectedCtrlStyle(bool isconnected = false);
+    void setup_camera_view_layout(CameraView layouttype = CameraView::MONO);
+    void setup_connected_controls_style(bool isconnected = false);
 
 public:
     MainWindow(QWidget *parent = nullptr);

@@ -1,14 +1,14 @@
 #ifndef SEVROVCONTROLLER_H
 #define SEVROVCONTROLLER_H
 
-enum class ViewMode { SINGLE, STEREO };
+#include "enumclasses.h"
 
 class SevROVController
 {
 public:
     SevROVController();
     bool isConnected = false;
-    ViewMode viewMode = ViewMode::SINGLE;
+    CameraView cameraView = CameraView::MONO;
 };
 
 #endif // SEVROVCONTROLLER_H

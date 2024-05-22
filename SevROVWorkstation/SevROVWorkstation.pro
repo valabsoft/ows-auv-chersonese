@@ -16,6 +16,7 @@ SOURCES += \
 
 HEADERS += \
     applicationsettings.h \
+    enumclasses.h \
     mainwindow.h \
     sevrovcontroller.h
 
