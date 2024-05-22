@@ -12,32 +12,15 @@ MainWindow::MainWindow(QWidget *parent)
     // Загрузка настроек
     _appSet.load();
 
-    setWindowIcon(QIcon(":/img/sevrov.png"));
-
-    // Фиксируем размер окна и убираем иконку ресайза
-    setFixedSize(QSize(800 - 10, 500));
-
-    // Установка иконок для кнопок
-    ui->pbSettings->setIcon(QIcon(":/img/settings_icon.png"));
-    ui->pbSettings->setIconSize(QSize(64, 64));
-    ui->pbStartStop->setIcon(QIcon(":/img/off_button_icon.png"));
-    ui->pbStartStop->setIconSize(QSize(64, 64));
-    ui->pbView->setIcon(QIcon(":/img/display_icon.png"));
-    ui->pbView->setIconSize(QSize(64, 64));
-    ui->pbScreenshot->setIcon(QIcon(":/img/camera_icon.png"));
-    ui->pbScreenshot->setIconSize(QSize(64, 64));
-
-    // Центрируем окно в пределах экрана
-    move(screen()->geometry().center() - frameGeometry().center());
-
     // TODO: После подключения общей библиотеки, использовать
     // setWindowTitle("ТНПА :: Контроль :: " + QString(APP_VERSION.c_str()));
     setWindowTitle("ТНПА :: AРМ Оператора :: " + _appSet.getAppVersion());
 
-    // Геометрия окон камер
-    ui->lbCamera->setGeometry(20, 10, 640, 480);
-    ui->lbCameraL->setGeometry(10, 10, 320, 240);
-    ui->lbCameraR->setGeometry(10 + 320 + 10, 10, 320, 240);
+    // Устанавливаем геометрию окна и основных элементов
+    setup_window_geometry();
+
+    // Установка иконок
+    setup_icons();
 
     // Layout по умолчанию - одиночная камера
     setup_camera_view_layout(CameraView::MONO);
@@ -95,6 +78,61 @@ void MainWindow::on_pbView_clicked()
     }
 
     setup_camera_view_layout(_sevROV.cameraView);
+}
+void MainWindow::setup_icons()
+{
+    // Иконка главного окна
+    setWindowIcon(QIcon(":/img/sevrov.png"));
+
+    // Установка иконок для кнопок
+    ui->pbSettings->setIcon(QIcon(":/img/settings_icon.png"));
+    ui->pbSettings->setIconSize(QSize(64, 64));
+    ui->pbStartStop->setIcon(QIcon(":/img/off_button_icon.png"));
+    ui->pbStartStop->setIconSize(QSize(64, 64));
+    ui->pbView->setIcon(QIcon(":/img/display_icon.png"));
+    ui->pbView->setIconSize(QSize(64, 64));
+    ui->pbScreenshot->setIcon(QIcon(":/img/camera_icon.png"));
+    ui->pbScreenshot->setIconSize(QSize(64, 64));
+}
+void MainWindow::setup_window_geometry()
+{
+    // Установка размера главного окна// Установка размера главного окна
+    int windowWidth = _appSet.CAMERA_WIDTH + _appSet.CONTROL_PANEL_WIDTH + _appSet.CAMERA_VIEW_BORDER_WIDTH * 4;
+    int windowHeight = _appSet.CAMERA_HEIGHT + _appSet.CAMERA_VIEW_BORDER_WIDTH * 2;
+
+    // Фиксируем размер окна и убираем иконку ресайза
+    setFixedSize(QSize(windowWidth, windowHeight));
+
+    // Центрируем окно в пределах экрана
+    move(screen()->geometry().center() - frameGeometry().center());
+
+    QRect mainWindowRect = this->geometry();
+
+    // Геометрия окон камер
+    ui->lbCamera->setGeometry(
+        _appSet.CAMERA_VIEW_X0,
+        _appSet.CAMERA_VIEW_Y0,
+        _appSet.CAMERA_WIDTH,
+        _appSet.CAMERA_HEIGHT);
+
+    ui->lbCameraL->setGeometry(
+        _appSet.CAMERA_VIEW_X0,
+        (mainWindowRect.height() - _appSet.CAMERA_HEIGHT / 2) / 2,
+        _appSet.CAMERA_WIDTH / 2,
+        _appSet.CAMERA_HEIGHT / 2);
+
+    ui->lbCameraR->setGeometry(
+        _appSet.CAMERA_VIEW_X0 + _appSet.CAMERA_WIDTH / 2 + _appSet.CAMERA_VIEW_BORDER_WIDTH,
+        (mainWindowRect.height() - _appSet.CAMERA_HEIGHT / 2) / 2,
+        _appSet.CAMERA_WIDTH / 2,
+        _appSet.CAMERA_HEIGHT / 2);
+
+    // Позицианируем панель управления
+    ui->gbControlButtons->setGeometry(
+        mainWindowRect.width() - _appSet.CONTROL_PANEL_WIDTH - _appSet.CAMERA_VIEW_BORDER_WIDTH,
+        _appSet.CAMERA_VIEW_Y0,
+        _appSet.CONTROL_PANEL_WIDTH,
+        mainWindowRect.height() - _appSet.CAMERA_VIEW_BORDER_WIDTH * 2);
 }
 void MainWindow::setup_camera_view_layout(CameraView layouttype)
 {

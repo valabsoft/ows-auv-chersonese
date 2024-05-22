@@ -7,11 +7,21 @@ class ApplicationSettings
 {
 private:
     const std::string APP_VERSION = "1.2.1";
-
 public:
     ApplicationSettings();
     QString getAppVersion();
     void load();
+
+    const int CAMERA_WIDTH = 640;
+    const int CAMERA_HEIGHT = 480;
+    //const int CAMERA_WIDTH = 1280;
+    //const int CAMERA_HEIGHT = 960;
+    //const int CAMERA_WIDTH = 1920;
+    //const int CAMERA_HEIGHT = 1080;
+    const int CAMERA_VIEW_X0 = 10;
+    const int CAMERA_VIEW_Y0 = 10;
+    const int CAMERA_VIEW_BORDER_WIDTH = 10;
+    const int CONTROL_PANEL_WIDTH = 120;
 };
 
 #endif // APPLICATIONSETTINGS_H

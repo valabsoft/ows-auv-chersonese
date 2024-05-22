@@ -19,6 +19,8 @@ private:
     ApplicationSettings _appSet;
     SevROVController _sevROV;
 
+    void setup_icons();
+    void setup_window_geometry();
     void setup_camera_view_layout(CameraView layouttype = CameraView::MONO);
     void setup_connected_controls_style(bool isconnected = false);
 
