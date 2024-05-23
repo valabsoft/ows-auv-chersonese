@@ -12,7 +12,7 @@ MainWindow::MainWindow(QWidget *parent)
     // Загрузка настроек
     _appSet.load();
 
-    // TODO: После подключения общей библиотеки, использовать
+    // TODO VA (23-05-2024): После подключения общей библиотеки, использовать
     // setWindowTitle("ТНПА :: Контроль :: " + QString(APP_VERSION.c_str()));
     setWindowTitle("ТНПА :: AРМ Оператора :: " + _appSet.getAppVersion());
 
@@ -29,12 +29,42 @@ MainWindow::MainWindow(QWidget *parent)
     // Цвет фона главного окна приложения
     this->setStyleSheet("background-color: black;");
 
+    QFont fontLabel("GOST type A", 8, QFont::Bold);
+    ui->lbFPS->setStyleSheet("background-color : black; color : silver;");
+    ui->lbFPS->setFont(fontLabel);
+
     _videoTimer = new QTimer(this);
     connect(_videoTimer, &QTimer::timeout, this, &MainWindow::on_video_timer);
+
+    QObject::connect(this, SIGNAL(update_fps_value(QString)), ui->lbFPS, SLOT(setText(QString)));
 }
 
 MainWindow::~MainWindow()
 {
+    if (_webCamO->isOpened())
+        _webCamO->release();
+    if (_webCamL->isOpened())
+        _webCamL->release();
+    if (_webCamR->isOpened())
+        _webCamR->release();
+
+    // Остановка таймера
+    if (!_videoTimer->isActive())
+        _videoTimer->stop();
+
+    // Освобождение ресурсов
+    if (_webCamO)
+        delete _webCamO;
+
+    if (_webCamL)
+        delete _webCamL;
+
+    if (_webCamR)
+        delete _webCamR;
+
+    if (_videoTimer)
+        delete _videoTimer;
+
     delete ui;
 }
 
@@ -42,6 +72,8 @@ void MainWindow::on_pbStartStop_clicked()
 {
     // Меняем состояние флага
     _sevROV.isConnected = !_sevROV.isConnected;
+    _cnt = 0; // Сбрасываем счетчик
+    Q_EMIT update_fps_value("CNT: " + QString::number(_cnt++));
 
     // Меняем иконку на кнопке
     if (_sevROV.isConnected)
@@ -241,6 +273,11 @@ void MainWindow::setup_camera_connection(CameraConnection connection)
         _webCamL = new cv::VideoCapture(camIDL);
         _webCamR = new cv::VideoCapture(camIDR);
 
+        // TODO VA (23-05-2024): Оно работает вообще?
+        _webCamO->set(cv::CAP_PROP_FPS, _appSet.CAMERA_FPS);
+        _webCamL->set(cv::CAP_PROP_FPS, _appSet.CAMERA_FPS);
+        _webCamR->set(cv::CAP_PROP_FPS, _appSet.CAMERA_FPS);
+
         // Запускаем таймер
         if (!_videoTimer->isActive())
             _videoTimer->start(_appSet.VIDEO_TIMER_INTERVAL);
@@ -274,6 +311,10 @@ void MainWindow::setup_camera_connection(CameraConnection connection)
         ui->lbCameraL->setPixmap(pixmap);
         ui->lbCameraR->setPixmap(pixmap);
 
+        // Останавливаем таймер
+        if (_videoTimer->isActive())
+            _videoTimer->stop();
+
         break;
     }
 }
@@ -282,6 +323,12 @@ void MainWindow::on_video_timer()
     cv::Mat resizedMatO;
     cv::Mat resizedMatL;
     cv::Mat resizedMatR;
+
+    // VA (23-05-2024) Не работает...
+    // double fps;
+    // fps = _webCamO->get(cv::CAP_PROP_FPS);
+
+    Q_EMIT update_fps_value("CNT: " + QString::number(_cnt++));
 
     switch (_sevROV.cameraView)
     {

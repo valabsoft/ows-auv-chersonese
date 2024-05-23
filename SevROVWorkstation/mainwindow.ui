@@ -143,6 +143,16 @@
         </spacer>
        </item>
        <item>
+        <widget class="QLabel" name="lbFPS">
+         <property name="text">
+          <string>CNT: 0</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QLabel" name="lbSevROVLogo">
          <property name="enabled">
           <bool>true</bool>

@@ -27,6 +27,7 @@ class MainWindow : public QMainWindow
 private:
     ApplicationSettings _appSet;
     SevROVController _sevROV;
+    long _cnt; // Счетчик вызовов
 
     ///////////////////////////////////////////////////////////////////////////
     // OpenCV related
@@ -70,5 +71,8 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+
+Q_SIGNALS:
+    void update_fps_value(QString fps);
 };
 #endif // MAINWINDOW_H
