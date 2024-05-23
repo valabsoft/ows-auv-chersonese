@@ -545,7 +545,7 @@ void MainWindow::on_pbScreenshot_clicked()
     t_vuxyzrgb data = get_cloud_3D_points(image.rows, image.cols);
 
     // Show tool window
-    _toolWindow->setData(image, data);
+    _toolWindow->set_data_cloud_3D(image, data);
     _toolWindow->show();
     _toolWindow->activateWindow();
 

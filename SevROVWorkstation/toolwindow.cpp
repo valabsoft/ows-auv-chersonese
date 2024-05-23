@@ -16,21 +16,12 @@ ToolWindow::ToolWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    // Set images for buttons
-    QPixmap btn2Dimg(":/icons/img/icon-ruler.png");
-    QPixmap btn3Dimg(":/icons/img/icon-cube.png");
-
-    QIcon btn2Dico(btn2Dimg);
-    QIcon btn3Dico(btn3Dimg);
-
-    ui->btn2D->setIcon(btn2Dico);
-    ui->btn2D->setIconSize(btn2Dimg.rect().size());
-
-    ui->btn3D->setIcon(btn3Dico);
-    ui->btn3D->setIconSize(btn3Dimg.rect().size());
+    // Установка иконок и стилей
+    setup_icons();
+    setup_controls_style();
 }
 
-void ToolWindow::setData(cv::Mat image, t_vuxyzrgb data)
+void ToolWindow::set_data_cloud_3D(cv::Mat image, t_vuxyzrgb data)
 {
     // Подгоняем размер сцены под размер изображения на входе
     ui->graphicsView->setFixedWidth(image.cols);
@@ -174,7 +165,7 @@ size_t ToolWindow::get_sum_count(std::vector<double> X,
     return N;
 }
 
-double ToolWindow::np_linalg_norm(std::vector<double> a)
+double ToolWindow::get_np_linalg_norm(std::vector<double> a)
 {
     double res = 0;
     for (size_t i = 0; i < a.size(); i++) {
@@ -209,18 +200,18 @@ double ToolWindow::lineseg_dist(std::vector<double> p,
 {
     std::vector<double> AB = substr(b, a);
     std::vector<double> AC = substr(p, a);
-    double area = np_linalg_norm(cross(AB, AC));
-    double CD = area / np_linalg_norm(AB);
+    double area = get_np_linalg_norm(cross(AB, AC));
+    double CD = area / get_np_linalg_norm(AB);
     return CD;
 }
 
-void ToolWindow::get_sizes(t_vuxyzrgb data,
-                           double* L,
-                           double* W,
-                           double* H,
-                           double* Length,
-                           double* Width,
-                           double* Distance)
+void ToolWindow::calculate_sizes(t_vuxyzrgb data,
+                                 double* L,
+                                 double* W,
+                                 double* H,
+                                 double* Length,
+                                 double* Width,
+                                 double* Distance)
 {
     // Формируем набор точек для выполнения расчетов
     std::vector<double> X;
@@ -426,7 +417,7 @@ void ToolWindow::on_lswClusters_itemSelectionChanged()
 
     // Рассчет геометрии точек
     double L, W, H, Length, Width, Distance;
-    get_sizes(clusterPoints, &L, &W, &H, &Length, &Width, &Distance);
+    calculate_sizes(clusterPoints, &L, &W, &H, &Length, &Width, &Distance);
 
     qDebug() << "L: " << L;
     qDebug() << "W: " << W;
@@ -442,12 +433,12 @@ void ToolWindow::on_lswClusters_itemSelectionChanged()
     geometryWidth = Width;
     geometryDistance = Distance;
 
-    ui->labelInfo->setText("L:\t\t" + QString::number(L, 'f', 1) + "\n" +
-                           "W:\t\t" + QString::number(W, 'f', 1) + "\n" +
-                           "H:\t\t" + QString::number(H, 'f', 1) + "\n" +
-                           "Length:\t\t" + QString::number(Length, 'f', 1) + "\n" +
-                           "Width:\t\t" + QString::number(Width, 'f', 1) + "\n" +
-                           "Distance:\t" + QString::number(Distance, 'f', 1));
+    ui->lbInfo->setText("L:\t\t" + QString::number(L, 'f', 1) + "\n" +
+                        "W:\t\t" + QString::number(W, 'f', 1) + "\n" +
+                        "H:\t\t" + QString::number(H, 'f', 1) + "\n" +
+                        "Length:\t\t" + QString::number(Length, 'f', 1) + "\n" +
+                        "Width:\t\t" + QString::number(Width, 'f', 1) + "\n" +
+                        "Distance:\t\t" + QString::number(Distance, 'f', 1));
 
     // Передать точки в объект Series
     series3D->dataProxy()->addItems(data);
@@ -597,7 +588,7 @@ void ToolWindow::on_btnDelete_clicked()
     // Рассчет геометрии точек
 
     double L, W, H, Length, Width, Distance;
-    get_sizes(newcluster, &L, &W, &H, &Length, &Width, &Distance);
+    calculate_sizes(newcluster, &L, &W, &H, &Length, &Width, &Distance);
 
     qDebug() << "L: " << L;
     qDebug() << "W: " << W;
@@ -613,10 +604,51 @@ void ToolWindow::on_btnDelete_clicked()
     geometryWidth = Width;
     geometryDistance = Distance;
 
-    ui->labelInfo->setText("L:\t\t" + QString::number(L, 'f', 1) + "\n" +
-                           "W:\t\t" + QString::number(W, 'f', 1) + "\n" +
-                           "H:\t\t" + QString::number(H, 'f', 1) + "\n" +
-                           "Length:\t\t" + QString::number(Length, 'f', 1) + "\n" +
-                           "Width:\t\t" + QString::number(Width, 'f', 1) + "\n" +
-                           "Distance:\t" + QString::number(Distance, 'f', 1));
+    ui->lbInfo->setText("L:\t\t" + QString::number(L, 'f', 1) + "\n" +
+                        "W:\t\t" + QString::number(W, 'f', 1) + "\n" +
+                        "H:\t\t" + QString::number(H, 'f', 1) + "\n" +
+                        "Length:\t\t" + QString::number(Length, 'f', 1) + "\n" +
+                        "Width:\t\t" + QString::number(Width, 'f', 1) + "\n" +
+                        "Distance:\t\t" + QString::number(Distance, 'f', 1));
+}
+
+void ToolWindow::setup_icons()
+{
+    ui->btn2D->setIcon(QIcon(":/img/ruler_2d_icon.png"));
+    ui->btn2D->setIconSize(QSize(64, 64));
+    ui->btn3D->setIcon(QIcon(":/img/ruler_3d_icon.png"));
+    ui->btn3D->setIconSize(QSize(64, 64));
+    ui->btnSave->setIcon(QIcon(":/img/download_icon.png"));
+    ui->btnSave->setIconSize(QSize(32, 32));
+    ui->btnDelete->setIcon(QIcon(":/img/remove_icon.png"));
+    ui->btnDelete->setIconSize(QSize(32, 32));
+}
+
+void ToolWindow::setup_controls_style()
+{
+    ui->graphicsView->setStyleSheet("QGraphicsView {"
+                                    "border-style: solid;"
+                                    "border-width: 1px;"
+                                    "border-color: #F0BE50; "
+                                    "}");
+    //ui->lswClusters->setStyleSheet("QListWidget {"
+    //                               "border-style: solid;"
+    //                               "border-width: 1px;"
+    //                               "border-color: #F0BE50; "
+    //                               "}");
+
+    ui->lswClusters->setStyleSheet("border-style: solid; border-width: 1px; border-color: #F0BE50; ");
+
+    QFont fontBold12("GOST type A", 12, QFont::Bold);
+    QFont fontNormal12("GOST type A", 12, QFont::Bold);
+
+    ui->lbInfo->setStyleSheet("background-color : black; color : silver;");
+    ui->lbInfo->setFont(fontBold12);
+
+    ui->lswClusters->setStyleSheet("background-color : black; color : silver;");
+    ui->lswClusters->setFont(fontNormal12);
+
+    ui->lineEditInfo->setStyleSheet("border-style: solid; border-width: 1px; border-color: #F0BE50; background-color: black; color: silver;");
+    ui->lineEditInfo->setFont(fontNormal12);
+
 }

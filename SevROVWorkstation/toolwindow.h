@@ -32,7 +32,7 @@ public:
 
     enum ToolMode {Mode2D, Mode3D};
     void setMode(ToolMode mode);
-    void setData(cv::Mat image, t_vuxyzrgb data);
+    void set_data_cloud_3D(cv::Mat image, t_vuxyzrgb data);
     ToolMode getMode();
 
 public slots:
@@ -81,7 +81,7 @@ private:
                          std::vector<double> Z,
                          Point3D MN, Point3D M0);
 
-    double np_linalg_norm(std::vector<double> a);
+    double get_np_linalg_norm(std::vector<double> a);
 
     std::vector<double> cross(std::vector<double> a,
                               std::vector<double> b);
@@ -94,13 +94,16 @@ private:
                         std::vector<double> b);
 
 
-    void get_sizes(t_vuxyzrgb data,     // Входной массив точек кластера
-                   double* L,           // Выход - Длина
-                   double* W,           // Выход - Ширина
-                   double* H,           // Выход - Высота
-                   double* Length,      // Выход - Длина осевой линии
-                   double* Width,       // Выход - Ширина осевой линии
-                   double* Distance);   // Выход - Расстояние до центра масс
+    void calculate_sizes(t_vuxyzrgb data,     // Входной массив точек кластера
+                         double* L,           // Выход - Длина
+                         double* W,           // Выход - Ширина
+                         double* H,           // Выход - Высота
+                         double* Length,      // Выход - Длина осевой линии
+                         double* Width,       // Выход - Ширина осевой линии
+                         double* Distance);   // Выход - Расстояние до центра масс
+
+    void setup_icons();
+    void setup_controls_style();
 
 };
 
