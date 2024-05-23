@@ -9,6 +9,9 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    // Создаем инструмент Линейка
+    _toolWindow = new ToolWindow(this);
+
     // Загрузка настроек
     _appSet.load();
 
@@ -48,11 +51,13 @@ MainWindow::~MainWindow()
     if (_webCamR->isOpened())
         _webCamR->release();
 
-    // Остановка таймера
+    // Освобождение ресурсов
     if (!_videoTimer->isActive())
         _videoTimer->stop();
 
-    // Освобождение ресурсов
+    if (_videoTimer)
+        delete _videoTimer;
+
     if (_webCamO)
         delete _webCamO;
 
@@ -62,8 +67,8 @@ MainWindow::~MainWindow()
     if (_webCamR)
         delete _webCamR;
 
-    if (_videoTimer)
-        delete _videoTimer;
+    if (_toolWindow)
+        delete _toolWindow;
 
     delete ui;
 }
@@ -93,6 +98,7 @@ void MainWindow::on_pbStartStop_clicked()
 
     setup_connected_controls_style(_sevROV.isConnected);
 }
+
 void MainWindow::on_pbView_clicked()
 {
     // Если нет соединения - выход
@@ -118,6 +124,7 @@ void MainWindow::on_pbView_clicked()
 
     setup_camera_view_layout(_sevROV.cameraView);
 }
+
 void MainWindow::setup_icons()
 {
     // Иконка главного окна
@@ -133,6 +140,7 @@ void MainWindow::setup_icons()
     ui->pbScreenshot->setIcon(QIcon(":/img/camera_icon.png"));
     ui->pbScreenshot->setIconSize(QSize(64, 64));
 }
+
 void MainWindow::setup_window_geometry()
 {
     // Установка размера главного окна// Установка размера главного окна
@@ -173,6 +181,7 @@ void MainWindow::setup_window_geometry()
         _appSet.CONTROL_PANEL_WIDTH,
         mainWindowRect.height() - _appSet.CAMERA_VIEW_BORDER_WIDTH * 2);
 }
+
 void MainWindow::setup_camera_view_layout(CameraView layouttype)
 {
     switch (layouttype)
@@ -189,6 +198,7 @@ void MainWindow::setup_camera_view_layout(CameraView layouttype)
         break;
     }
 }
+
 void MainWindow::setup_connected_controls_style(bool isconnected)
 {
     if (isconnected)
@@ -318,6 +328,7 @@ void MainWindow::setup_camera_connection(CameraConnection connection)
         break;
     }
 }
+
 void MainWindow::on_video_timer()
 {
     cv::Mat resizedMatO;
@@ -395,3 +406,157 @@ void MainWindow::on_video_timer()
     }
 
 }
+
+t_vuxyzrgb MainWindow:: get_cloud_3D_points(int rows, int cols, bool norm = true)
+{
+    t_vuxyzrgb data;
+
+    // Путь к папке с данными
+    auto dataPath = QDir::cleanPath(qApp->applicationDirPath() +
+                                    QDir::separator() + "data");
+    // qDebug() << "Data path : " << dataPath;
+
+    // Чтение данных
+    auto fileName = QFileDialog::getOpenFileName(this,
+                                                 tr("Open Data File"),
+                                                 dataPath,
+                                                 tr("TXT Files (*.txt)"));
+    QFile file(fileName);
+    QStringList lineData;
+    Data3DItem data3DItem;
+
+    int vuX;
+    int vuY;
+    double xyzX;
+    double xyzY;
+    double xyzZ;
+    int rgbR;
+    int rgbG;
+    int rgbB;
+    int clst;
+
+    int Xmin = INT_MAX;
+    int Xmax = INT_MIN;
+    int Ymin = INT_MAX;
+    int Ymax = INT_MIN;
+
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        QTextStream in(&file);
+        while (!in.atEnd()) {
+
+            // Строка данных
+            lineData = in.readLine().split("\t");
+
+            // Парсинг
+            vuX = lineData[0].trimmed().toInt();
+            vuY = lineData[1].trimmed().toInt();
+
+            if (vuX > Xmax)
+                Xmax = vuX;
+            if (vuX < Xmin)
+                Xmin = vuX;
+
+            if (vuY > Ymax)
+                Ymax = vuY;
+            if (vuY < Ymin)
+                Ymin = vuY;
+
+            xyzX = lineData[2].trimmed().toDouble();
+            xyzY = lineData[3].trimmed().toDouble();
+            xyzZ = lineData[4].trimmed().toDouble();
+
+            rgbR = lineData[5].trimmed().toInt();
+            rgbG = lineData[6].trimmed().toInt();
+            rgbB = lineData[7].trimmed().toInt();
+
+            clst = lineData[8].trimmed().toInt();
+
+            // Очистка структуры
+            data3DItem.vu.clear();
+            data3DItem.vu.clear();
+
+            data3DItem.xyz.clear();
+            data3DItem.xyz.clear();
+            data3DItem.xyz.clear();
+
+            data3DItem.rgb.clear();
+            data3DItem.rgb.clear();
+            data3DItem.rgb.clear();
+
+            // Заполнение структуры
+            data3DItem.vu.push_back(vuX);
+            data3DItem.vu.push_back(vuY);
+
+            data3DItem.xyz.push_back(xyzX);
+            data3DItem.xyz.push_back(xyzY);
+            data3DItem.xyz.push_back(xyzZ);
+
+            data3DItem.rgb.push_back(rgbR);
+            data3DItem.rgb.push_back(rgbG);
+            data3DItem.rgb.push_back(rgbB);
+
+            data3DItem.cluster = clst;
+
+            // Накопление данных
+            data.vu.push_back(data3DItem.vu);
+            data.xyz.push_back(data3DItem.xyz);
+            data.rgb.push_back(data3DItem.rgb);
+            data.cluster.push_back(data3DItem.cluster);
+        }
+
+
+        if (norm)
+        {
+            for (size_t i = 0; i < data.vu.size(); i++)
+            {
+                if (Xmax != Xmin)
+                    data.vu.at(i).at(1) = cols * (data.vu.at(i).at(1) - Xmin) /
+                                          (Xmax - Xmin);
+                if (Ymax != Ymin)
+                    data.vu.at(i).at(0) = rows * (data.vu.at(i).at(0) - Ymin) /
+                                          (Ymax - Ymin);
+            }
+        }
+
+    }
+
+    return data;
+}
+
+void MainWindow::on_pbScreenshot_clicked()
+{
+    // Get current Image from camera
+    //cv::Mat image_original;
+    //webcam.read(image_original);
+    cv::Mat image;
+    _webCamO->read(image);
+    // VA 31-07-2023: Это временный костыль.
+    // Размер изображения на панели инструментов (и сама панель)
+    // должны изменять свой размер автоматически
+    //cv::resize(image_original,
+    //           image,
+    //           cv::Size(640, 480),
+    //           0,
+    //           0,
+    //           cv::INTER_LINEAR);
+
+    // Массив данных описывающий облоко 3D точек
+    t_vuxyzrgb data = get_cloud_3D_points(image.rows, image.cols);
+
+    // Show tool window
+    _toolWindow->setData(image, data);
+    _toolWindow->show();
+    _toolWindow->activateWindow();
+
+    // Центрировать инструментальную панель
+    QRect screenGeometry = QGuiApplication::screens()[0]->geometry();
+    int x = (screenGeometry.width() - _toolWindow->width()) / 2;
+    int y = (screenGeometry.height() - _toolWindow->height()) / 2;
+    _toolWindow->move(x, y);
+
+    //toolWindow->layout()->setSizeConstraint(QLayout::SetFixedSize);
+    //toolWindow->exec();
+    //delete toolWindow;
+}
+

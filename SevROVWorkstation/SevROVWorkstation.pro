@@ -1,4 +1,4 @@
-QT       += core gui
+QT       += core gui datavisualization
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -10,18 +10,24 @@ CONFIG += c++17
 
 SOURCES += \
     applicationsettings.cpp \
+    camerascene.cpp \
     main.cpp \
     mainwindow.cpp \
-    sevrovcontroller.cpp
+    sevrovcontroller.cpp \
+    toolwindow.cpp
 
 HEADERS += \
     applicationsettings.h \
+    camerascene.h \
+    datastructure.h \
     enumclasses.h \
     mainwindow.h \
-    sevrovcontroller.h
+    sevrovcontroller.h \
+    toolwindow.h
 
 FORMS += \
-    mainwindow.ui
+    mainwindow.ui \
+    toolwindow.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

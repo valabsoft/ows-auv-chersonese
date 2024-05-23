@@ -4,10 +4,13 @@
 #include <QMainWindow>
 #include <QTimer>
 #include <QImage>
+#include <QFileDialog>
 
 #include "applicationsettings.h"
 #include "sevrovcontroller.h"
 #include "enumclasses.h"
+#include "datastructure.h"
+#include "toolwindow.h"
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
@@ -27,6 +30,10 @@ class MainWindow : public QMainWindow
 private:
     ApplicationSettings _appSet;
     SevROVController _sevROV;
+
+    // Инструмент "Линейка"
+    ToolWindow *_toolWindow;
+
     long _cnt; // Счетчик вызовов
 
     ///////////////////////////////////////////////////////////////////////////
@@ -59,6 +66,7 @@ private:
     void setup_camera_connection(CameraConnection connection = CameraConnection::ON);
 
     void on_video_timer();
+    t_vuxyzrgb get_cloud_3D_points(int rows, int cols, bool norm);
 
 public:
     MainWindow(QWidget *parent = nullptr);
@@ -68,6 +76,8 @@ private slots:
     void on_pbStartStop_clicked();
 
     void on_pbView_clicked();
+
+    void on_pbScreenshot_clicked();
 
 private:
     Ui::MainWindow *ui;
