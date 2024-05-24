@@ -34,6 +34,7 @@ public:
     void setMode(ToolMode mode);
     void set_data_cloud_3D(cv::Mat image, t_vuxyzrgb data);
     ToolMode getMode();
+    void clear_data();
 
 public slots:
     void updateInfoA(double X, double Y, double Z, double D);

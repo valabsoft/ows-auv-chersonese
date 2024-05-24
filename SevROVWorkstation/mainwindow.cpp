@@ -9,9 +9,6 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    // Создаем инструмент Линейка
-    _toolWindow = new ToolWindow(this);
-
     // Загрузка настроек
     _appSet.load();
 
@@ -526,11 +523,13 @@ t_vuxyzrgb MainWindow:: get_cloud_3D_points(int rows, int cols, bool norm = true
 
 void MainWindow::on_pbScreenshot_clicked()
 {
+    // Создаем инструмент Линейка
+    _toolWindow = new ToolWindow(this);
+
     // Get current Image from camera
-    //cv::Mat image_original;
-    //webcam.read(image_original);
     cv::Mat image;
     _webCamO->read(image);
+
     // VA 31-07-2023: Это временный костыль.
     // Размер изображения на панели инструментов (и сама панель)
     // должны изменять свой размер автоматически
@@ -544,10 +543,8 @@ void MainWindow::on_pbScreenshot_clicked()
     // Массив данных описывающий облоко 3D точек
     t_vuxyzrgb data = get_cloud_3D_points(image.rows, image.cols);
 
-    // Show tool window
+    // Show tool window    
     _toolWindow->set_data_cloud_3D(image, data);
-    _toolWindow->show();
-    _toolWindow->activateWindow();
 
     // Центрировать инструментальную панель
     QRect screenGeometry = QGuiApplication::screens()[0]->geometry();
@@ -555,8 +552,9 @@ void MainWindow::on_pbScreenshot_clicked()
     int y = (screenGeometry.height() - _toolWindow->height()) / 2;
     _toolWindow->move(x, y);
 
-    //toolWindow->layout()->setSizeConstraint(QLayout::SetFixedSize);
-    //toolWindow->exec();
-    //delete toolWindow;
+    _toolWindow->exec();
+
+    // Очищаем ресурсы
+    delete _toolWindow;
 }
 

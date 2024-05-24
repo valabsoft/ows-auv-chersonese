@@ -652,3 +652,8 @@ void ToolWindow::setup_controls_style()
     ui->lineEditInfo->setFont(fontNormal12);
 
 }
+
+void ToolWindow::clear_data()
+{
+    ui->lswClusters->clear();
+}
