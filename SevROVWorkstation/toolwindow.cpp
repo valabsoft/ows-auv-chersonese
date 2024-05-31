@@ -630,9 +630,13 @@ void ToolWindow::on_btnSave_clicked()
     QString sceneImage = QString("output") + QDir::separator() +
                          QString("scene_" + timeStamp + ".png");
     // Захват сцены снимка с линейкой
-    QPixmap sceneMap = ui->graphicsView->grab(
-        ui->graphicsView->sceneRect().toRect());
+    //QPixmap sceneMap = ui->graphicsView->grab(
+    //    ui->graphicsView->sceneRect().toRect());
+
+    // Захват только картинки без учета других компонент
+    QPixmap sceneMap = ui->graphicsView->grab(ui->graphicsView->contentsRect());
     sceneMap.save(sceneImage);
+
 
 
     // Генерируем имя файла и сохраняем сцену 3D графика с линейкой
