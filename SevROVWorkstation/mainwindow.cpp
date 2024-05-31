@@ -1,7 +1,10 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+
 #include <QScreen>
 #include <QDir>
+
+#include <fstream>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -401,7 +404,6 @@ void MainWindow::on_video_timer()
     default:
         break;
     }
-
 }
 
 t_vuxyzrgb MainWindow:: get_cloud_3D_points(int rows, int cols, bool norm = true)
@@ -521,6 +523,143 @@ t_vuxyzrgb MainWindow:: get_cloud_3D_points(int rows, int cols, bool norm = true
     return data;
 }
 
+std::vector<Cloud3DItem> MainWindow::get_cloud_3D_points(std::string pathtofile)
+{
+    std::vector<Cloud3DItem> cloud;
+
+    Cloud3DItem item;
+
+    int screenX;
+    int screenY;
+    double worldX;
+    double worldY;
+    double worldZ;
+
+    std::string datarow;
+
+    // TODO: Add path checking
+    std::ifstream infile(pathtofile);
+
+    // Чтения файла
+    if (infile.is_open())
+    {
+        while (infile >> screenX >> screenY >> worldX >> worldY >> worldZ)
+        {
+            item.screenX = screenX;
+            item.screenY = screenY;
+            item.worldX = worldX;
+            item.worldY = worldY;
+            item.worldZ = worldZ;
+
+            cloud.push_back(item);
+        }
+
+        infile.close();
+    }
+
+    return cloud;
+}
+
+t_vuxyzrgb MainWindow:: MainWindow::convert_cloud_3D_points(std::vector<Cloud3DItem> cloud, bool norm = true)
+{
+    t_vuxyzrgb data;
+    Data3DItem data3DItem;
+
+    int vuX;
+    int vuY;
+    double xyzX;
+    double xyzY;
+    double xyzZ;
+    int rgbR;
+    int rgbG;
+    int rgbB;
+    int clst;
+
+    int Xmin = INT_MAX;
+    int Xmax = INT_MIN;
+    int Ymin = INT_MAX;
+    int Ymax = INT_MIN;
+
+    for (auto &item : cloud) // access by reference to avoid copying
+    {
+        vuX = item.screenX;
+        vuY = item.screenY;
+        xyzX = item.worldX;
+        xyzY = item.worldY;
+        xyzZ = item.worldZ;
+
+        ///////////////////////////////////////////////////////////////////////
+        // Min Max
+        ///////////////////////////////////////////////////////////////////////
+
+        if (vuX > Xmax)
+            Xmax = vuX;
+        if (vuX < Xmin)
+            Xmin = vuX;
+
+        if (vuY > Ymax)
+            Ymax = vuY;
+        if (vuY < Ymin)
+            Ymin = vuY;
+
+        ///////////////////////////////////////////////////////////////////////
+
+        rgbR = 0;
+        rgbG = 0;
+        rgbB = 0;
+
+        clst = 0;
+
+        // Очистка структуры
+        data3DItem.vu.clear();
+        data3DItem.vu.clear();
+
+        data3DItem.xyz.clear();
+        data3DItem.xyz.clear();
+        data3DItem.xyz.clear();
+
+        data3DItem.rgb.clear();
+        data3DItem.rgb.clear();
+        data3DItem.rgb.clear();
+
+        // Заполнение структуры
+        data3DItem.vu.push_back(vuX);
+        data3DItem.vu.push_back(vuY);
+
+        data3DItem.xyz.push_back(xyzX);
+        data3DItem.xyz.push_back(xyzY);
+        data3DItem.xyz.push_back(xyzZ);
+
+        data3DItem.rgb.push_back(rgbR);
+        data3DItem.rgb.push_back(rgbG);
+        data3DItem.rgb.push_back(rgbB);
+
+        data3DItem.cluster = clst;
+
+        // Накопление данных
+        data.vu.push_back(data3DItem.vu);
+        data.xyz.push_back(data3DItem.xyz);
+        data.rgb.push_back(data3DItem.rgb);
+        data.cluster.push_back(data3DItem.cluster);
+    }
+
+    // Нормирование
+    //if (norm)
+    //{
+    //    for (size_t i = 0; i < data.vu.size(); i++)
+    //    {
+    //        if (Xmax != Xmin)
+    //            data.vu.at(i).at(1) = cols * (data.vu.at(i).at(1) - Xmin) /
+    //                                  (Xmax - Xmin);
+    //        if (Ymax != Ymin)
+    //            data.vu.at(i).at(0) = rows * (data.vu.at(i).at(0) - Ymin) /
+    //                                  (Ymax - Ymin);
+    //    }
+    //}
+
+    return data;
+}
+
 void MainWindow::on_pbScreenshot_clicked()
 {
     // Создаем инструмент Линейка
@@ -530,15 +669,42 @@ void MainWindow::on_pbScreenshot_clicked()
     cv::Mat image;
     _webCamO->read(image);
 
-    // VA 31-07-2023: Это временный костыль.
-    // Размер изображения на панели инструментов (и сама панель)
-    // должны изменять свой размер автоматически
-    //cv::resize(image_original,
-    //           image,
-    //           cv::Size(640, 480),
-    //           0,
-    //           0,
-    //           cv::INTER_LINEAR);
+    // FOR DEBUG ONLY
+    // Ресайз картинки под размер камеры
+    cv::Mat image_resized;
+    cv::resize(image,
+               image_resized,
+               cv::Size(_appSet.CAMERA_WIDTH, _appSet.CAMERA_HEIGHT),
+               0,
+               0,
+               cv::INTER_LINEAR);
+
+
+    // Загрузка данных
+    std::vector<Cloud3DItem> cloud = get_cloud_3D_points("C:\\TEMP\\cloud_3D.txt");
+    // std::vector<Cloud3DItem> cloud = get_cloud_3D_points("C:\\TEMP\\3d_points.txt");
+
+    // Конвертация в старый формат
+    t_vuxyzrgb data = convert_cloud_3D_points(cloud);
+
+    _toolWindow->setup_window_geometry();
+    // _toolWindow->set_data_cloud_3D(image_resized, cloud);
+    _toolWindow->set_data_cloud_3D(image_resized, data);
+
+
+    // Центрировать инструментальную панель
+    QRect screenGeometry = QGuiApplication::screens()[0]->geometry();
+    int x = (screenGeometry.width() - _toolWindow->width()) / 2;
+    int y = (screenGeometry.height() - _toolWindow->height()) / 2;
+
+    _toolWindow->move(x, y);
+    _toolWindow->exec();
+
+    // Очищаем ресурсы
+    delete _toolWindow;
+
+    // Реализация работы с Пашиным облоком
+    /*
 
     // Массив данных описывающий облоко 3D точек
     t_vuxyzrgb data = get_cloud_3D_points(image.rows, image.cols);
@@ -556,5 +722,6 @@ void MainWindow::on_pbScreenshot_clicked()
 
     // Очищаем ресурсы
     delete _toolWindow;
+*/
 }
 

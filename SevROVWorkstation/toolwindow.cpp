@@ -16,9 +16,125 @@ ToolWindow::ToolWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    // Инициализация указателей
+    cameraScene = nullptr;
+    series3D = nullptr;
+    graph3D = nullptr;
+    container3D = nullptr;
+
     // Установка иконок и стилей
     setup_icons();
     setup_controls_style();
+}
+
+void ToolWindow::setup_window_geometry()
+{
+    int windowWidth = _appSet.CAMERA_WIDTH + _appSet.TOOL_PANEL_WIDHT + _appSet.CAMERA_VIEW_BORDER_WIDTH * 3;
+    int windowHeight = _appSet.CAMERA_HEIGHT + _appSet.TOOL_PANEL_HEIGHT + _appSet.CAMERA_VIEW_BORDER_WIDTH * 3;
+
+    // Фиксируем размер окна и убираем иконку ресайза
+    setFixedSize(QSize(windowWidth, windowHeight));
+
+    ui->graphicsView->setFixedWidth(_appSet.CAMERA_WIDTH);
+    ui->graphicsView->setFixedHeight(_appSet.CAMERA_HEIGHT);
+
+    // Центрируем окно в пределах экрана
+    move(screen()->geometry().center() - frameGeometry().center());
+}
+
+void ToolWindow::set_data_cloud_3D(cv::Mat image, t_vuxyzrgb data, std::vector<Cloud3DItem> cloud)
+{
+    // Check the source image
+    if (image.empty())
+        return;
+
+    // Image copy
+    source = image.clone();
+
+    // Data copy
+    allPoints = data;
+
+    // Get unique clusters IDs
+    std::vector<int> clusterIDs;
+    clusterIDs.push_back(0); // Для датасета Олега у нас только один кластер
+
+    // Image preprocessing
+    cv::cvtColor(source, destination, cv::COLOR_BGR2RGB);
+    imgcam = QImage((uchar*) destination.data,
+                    destination.cols,
+                    destination.rows,
+                    destination.step,
+                    QImage::Format_RGB888);
+
+    cameraScene = new CameraScene(imgcam);
+    ui->graphicsView->setScene(cameraScene);
+    // https://stackoverflow.com/questions/7772080/tracking-mouse-move-in-qgraphicsscene-class
+    ui->graphicsView->setMouseTracking(true);
+
+    // Добавляем слот-сигнал
+    QObject::connect(cameraScene, &CameraScene::updateInfo, this, &ToolWindow::updateInfoA);
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Создаем объекты для работы с 3D-графиком
+    graph3D = new Q3DScatter();
+    series3D = new QScatter3DSeries();
+
+    series3D->setItemSize(0.2f);
+    series3D->setMeshSmooth(true);
+
+    graph3D->axisX()->setTitle("X");
+    graph3D->axisY()->setTitle("Y");
+    graph3D->axisZ()->setTitle("Z");
+
+    series3D->setItemLabelFormat(
+        QStringLiteral("@xTitle: @xLabel @yTitle: @yLabel @zTitle: @zLabel"));
+
+    graph3D->setShadowQuality(QAbstract3DGraph::ShadowQualitySoftLow);
+    graph3D->scene()->activeCamera()->setCameraPreset(Q3DCamera::CameraPresetFront);
+
+    graph3D->addSeries(series3D);
+
+    container3D = QWidget::createWindowContainer(graph3D);
+    ///////////////////////////////////////////////////////////////////////////
+
+    // Checkbox list generationi
+    for (int i : clusterIDs)
+    {
+        // Checkbox List
+        // QListWidgetItem *item = new QListWidgetItem;
+        // item->setText("Claster " + QString::number(i + 1));
+        // item->setCheckState(Qt::Unchecked);
+        // ui->lswClusters->addItem(item);
+
+        // Radiobutton list
+        QListWidgetItem *item = new QListWidgetItem(ui->lswClusters);
+        ui->lswClusters->setItemWidget(
+            item,
+            new QRadioButton(QString("Cluster %1").arg(i)));
+    }
+
+    // Check the first item
+    if (ui->lswClusters->count() > 0)
+    {
+        auto firstItem =
+            static_cast<QRadioButton*>(
+                ui->lswClusters->itemWidget(ui->lswClusters->item(0)));
+        firstItem->setChecked(true);
+
+        ui->lswClusters->item(0)->setSelected(true);
+    }
+
+    // Установка темы
+    Q3DTheme *currentTheme = graph3D->activeTheme();
+    currentTheme->setBackgroundEnabled(false);
+    currentTheme->setType(Q3DTheme::ThemeArmyBlue);
+
+    setMode(ToolMode::Mode2D);
+
+    // Для фиксации кнопок с правой стороны (сбивает выравнивание сцены)
+    // ui->verticalLayoutBtn->setAlignment(Qt::AlignRight);
+
+    ui->btnDelete->setVisible(false);
 }
 
 void ToolWindow::set_data_cloud_3D(cv::Mat image, t_vuxyzrgb data)
@@ -132,11 +248,17 @@ void ToolWindow::set_data_cloud_3D(cv::Mat image, t_vuxyzrgb data)
 
 ToolWindow::~ToolWindow()
 {
-    delete cameraScene;
+    if (cameraScene != nullptr)
+        delete cameraScene;
 
-    delete series3D;
-    delete graph3D;
-    delete container3D;
+    if (series3D != nullptr)
+        delete series3D;
+
+    if (graph3D != nullptr)
+        delete graph3D;
+
+    if (container3D != nullptr)
+        delete container3D;
 
     delete ui;
 }

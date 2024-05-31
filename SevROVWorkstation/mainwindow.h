@@ -67,6 +67,8 @@ private:
 
     void on_video_timer();
     t_vuxyzrgb get_cloud_3D_points(int rows, int cols, bool norm);
+    std::vector<Cloud3DItem> get_cloud_3D_points(std::string pathtofile);
+    t_vuxyzrgb convert_cloud_3D_points(std::vector<Cloud3DItem> cloud, bool);
 
 public:
     MainWindow(QWidget *parent = nullptr);

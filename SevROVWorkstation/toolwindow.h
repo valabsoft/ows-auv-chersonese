@@ -13,6 +13,7 @@
 //#include <opencv2/imgproc/imgproc.hpp>
 
 #include "datastructure.h"
+#include "applicationsettings.h"
 
 #include <algorithm>
 #include <iterator>
@@ -33,8 +34,11 @@ public:
     enum ToolMode {Mode2D, Mode3D};
     void setMode(ToolMode mode);
     void set_data_cloud_3D(cv::Mat image, t_vuxyzrgb data);
+    void set_data_cloud_3D(cv::Mat image, t_vuxyzrgb data, std::vector<Cloud3DItem> cloud);
     ToolMode getMode();
     void clear_data();
+
+    void setup_window_geometry();
 
 public slots:
     void updateInfoA(double X, double Y, double Z, double D);
@@ -51,7 +55,8 @@ private slots:
     void on_btnDelete_clicked();
 
 private:
-    Ui::ToolWindow *ui;    
+    Ui::ToolWindow *ui;
+    ApplicationSettings _appSet;
     cv::Mat source;
     cv::Mat destination;
     QImage imgcam;    
@@ -105,7 +110,6 @@ private:
 
     void setup_icons();
     void setup_controls_style();
-
 };
 
 #endif // TOOLWINDOW_H

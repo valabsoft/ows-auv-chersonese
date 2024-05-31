@@ -128,8 +128,6 @@ struct t_vuxyzrgb               // Структура в формате std:vect
 
     std::vector<double> limit_WorkingArea;   // Границы рабоче зоны для стереокамры СТЗ, за её пределами ничего не видит
 
-
-
     //=================================================
     // Габариты объекта
     //=================================================
@@ -138,6 +136,15 @@ struct t_vuxyzrgb               // Структура в формате std:vect
     double ObjSize_circumscribedHeight = -1;
     double ObjSize_ObjLength = -1;
     double ObjSize_ObjWidth = -1;
+};
+
+struct Cloud3DItem
+{
+    int screenX;
+    int screenY;
+    double worldX;
+    double worldY;
+    double worldZ;
 };
 
 #endif // DATASTRUCTURE_H

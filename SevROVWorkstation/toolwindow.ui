@@ -211,6 +211,18 @@
    </item>
    <item row="1" column="0" colspan="2">
     <widget class="QLineEdit" name="lineEditInfo">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>25</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>25</height>
+      </size>
+     </property>
      <property name="cursor">
       <cursorShape>ArrowCursor</cursorShape>
      </property>
