@@ -679,7 +679,7 @@ void MainWindow::on_pbScreenshot_clicked()
                0,
                cv::INTER_LINEAR);
 
-
+    // FOR DEBUG ONLY
     // Загрузка данных
     std::vector<Cloud3DItem> cloud = get_cloud_3D_points("C:\\TEMP\\cloud_3D.txt");
     // std::vector<Cloud3DItem> cloud = get_cloud_3D_points("C:\\TEMP\\3d_points.txt");
@@ -688,9 +688,10 @@ void MainWindow::on_pbScreenshot_clicked()
     t_vuxyzrgb data = convert_cloud_3D_points(cloud);
 
     _toolWindow->setup_window_geometry();
+    // TODO: Переделать под новый формат данных
     // _toolWindow->set_data_cloud_3D(image_resized, cloud);
     _toolWindow->set_data_cloud_3D(image_resized, data);
-
+    _toolWindow->setWindowTitle("ТНПА :: AРМ Оператора :: " + _appSet.getAppVersion());
 
     // Центрировать инструментальную панель
     QRect screenGeometry = QGuiApplication::screens()[0]->geometry();
