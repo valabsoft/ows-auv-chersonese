@@ -70,6 +70,8 @@ private:
     std::vector<Cloud3DItem> get_cloud_3D_points(std::string pathtofile);
     t_vuxyzrgb convert_cloud_3D_points(std::vector<Cloud3DItem> cloud, bool);
 
+    void move_window_to_center();
+
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();

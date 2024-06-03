@@ -141,6 +141,16 @@ void MainWindow::setup_icons()
     ui->pbScreenshot->setIconSize(QSize(64, 64));
 }
 
+void MainWindow::move_window_to_center()
+{
+    auto primaryScreen = QGuiApplication::primaryScreen(); // Главный экран
+    QRect primaryScreenRect = primaryScreen->availableGeometry(); // Размер главного экрана
+    QPoint primaryScreenRectCenter = primaryScreenRect.center();
+    primaryScreenRectCenter.setX(primaryScreenRectCenter.x() - (this->width()/2));
+    primaryScreenRectCenter.setY(primaryScreenRectCenter.y() - (this->height()/2));
+    move(primaryScreenRectCenter);
+}
+
 void MainWindow::setup_window_geometry()
 {
     // Установка размера главного окна// Установка размера главного окна
@@ -151,7 +161,7 @@ void MainWindow::setup_window_geometry()
     setFixedSize(QSize(windowWidth, windowHeight));
 
     // Центрируем окно в пределах экрана
-    move(screen()->geometry().center() - frameGeometry().center());
+    move_window_to_center();
 
     QRect mainWindowRect = this->geometry();
 
@@ -257,10 +267,6 @@ void MainWindow::setup_connected_controls_style(bool isconnected)
 
 void MainWindow::setup_camera_connection(CameraConnection connection)
 {
-    int camID = 0;
-    int camIDL = 0;
-    int camIDR = 0;
-
     switch (connection)
     {
     case CameraConnection::ON:
@@ -279,9 +285,9 @@ void MainWindow::setup_camera_connection(CameraConnection connection)
         //    break;
         //}
 
-        _webCamO = new cv::VideoCapture(camID);
-        _webCamL = new cv::VideoCapture(camIDL);
-        _webCamR = new cv::VideoCapture(camIDR);
+        _webCamO = new cv::VideoCapture(_appSet.CAMERA_ID);
+        _webCamL = new cv::VideoCapture(_appSet.CAMERA_LEFT_ID);
+        _webCamR = new cv::VideoCapture(_appSet.CAMERA_RIGHT_ID);
 
         // TODO VA (23-05-2024): Оно работает вообще?
         _webCamO->set(cv::CAP_PROP_FPS, _appSet.CAMERA_FPS);
@@ -679,7 +685,7 @@ void MainWindow::on_pbScreenshot_clicked()
                0,
                cv::INTER_LINEAR);
 
-
+    // FOR DEBUG ONLY
     // Загрузка данных
     std::vector<Cloud3DItem> cloud = get_cloud_3D_points("C:\\TEMP\\cloud_3D.txt");
     // std::vector<Cloud3DItem> cloud = get_cloud_3D_points("C:\\TEMP\\3d_points.txt");
@@ -688,9 +694,10 @@ void MainWindow::on_pbScreenshot_clicked()
     t_vuxyzrgb data = convert_cloud_3D_points(cloud);
 
     _toolWindow->setup_window_geometry();
+    // TODO: Переделать под новый формат данных
     // _toolWindow->set_data_cloud_3D(image_resized, cloud);
     _toolWindow->set_data_cloud_3D(image_resized, data);
-
+    _toolWindow->setWindowTitle("ТНПА :: AРМ Оператора :: " + _appSet.getAppVersion());
 
     // Центрировать инструментальную панель
     QRect screenGeometry = QGuiApplication::screens()[0]->geometry();
@@ -703,6 +710,7 @@ void MainWindow::on_pbScreenshot_clicked()
     // Очищаем ресурсы
     delete _toolWindow;
 
+    ///////////////////////////////////////////////////////////////////////////
     // Реализация работы с Пашиным облоком
     /*
 
@@ -722,6 +730,8 @@ void MainWindow::on_pbScreenshot_clicked()
 
     // Очищаем ресурсы
     delete _toolWindow;
-*/
+
+    */
+    ///////////////////////////////////////////////////////////////////////////
 }
 

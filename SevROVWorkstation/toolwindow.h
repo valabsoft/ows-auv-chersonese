@@ -110,6 +110,7 @@ private:
 
     void setup_icons();
     void setup_controls_style();
+    void move_window_to_center();
 };
 
 #endif // TOOLWINDOW_H

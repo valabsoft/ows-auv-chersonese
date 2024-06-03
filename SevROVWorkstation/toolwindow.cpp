@@ -27,6 +27,17 @@ ToolWindow::ToolWindow(QWidget *parent) :
     setup_controls_style();
 }
 
+void ToolWindow::move_window_to_center()
+{
+    auto primaryScreen = QGuiApplication::primaryScreen(); // Главный экран
+    QRect primaryScreenRect = primaryScreen->availableGeometry(); // Размер главного экрана
+
+    QPoint primaryScreenRectCenter = primaryScreenRect.center();
+    primaryScreenRectCenter.setX(primaryScreenRectCenter.x() - (this->width()/2));
+    primaryScreenRectCenter.setY(primaryScreenRectCenter.y() - (this->height()/2));
+    move(primaryScreenRectCenter);
+}
+
 void ToolWindow::setup_window_geometry()
 {
     int windowWidth = _appSet.CAMERA_WIDTH + _appSet.TOOL_PANEL_WIDHT + _appSet.CAMERA_VIEW_BORDER_WIDTH * 3;
@@ -39,7 +50,7 @@ void ToolWindow::setup_window_geometry()
     ui->graphicsView->setFixedHeight(_appSet.CAMERA_HEIGHT);
 
     // Центрируем окно в пределах экрана
-    move(screen()->geometry().center() - frameGeometry().center());
+    move_window_to_center();
 }
 
 void ToolWindow::set_data_cloud_3D(cv::Mat image, t_vuxyzrgb data, std::vector<Cloud3DItem> cloud)

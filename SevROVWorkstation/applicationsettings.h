@@ -28,6 +28,10 @@ public:
     const int CAMERA_FPS = 30;
 
     const int VIDEO_TIMER_INTERVAL = 50;
+
+    const int CAMERA_ID = 0;
+    const int CAMERA_LEFT_ID = 0;
+    const int CAMERA_RIGHT_ID = 0;
 };
 
 #endif // APPLICATIONSETTINGS_H
