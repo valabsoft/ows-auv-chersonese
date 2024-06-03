@@ -71,6 +71,14 @@ private:
     t_vuxyzrgb convert_cloud_3D_points(std::vector<Cloud3DItem> cloud, bool);
 
     void move_window_to_center();
+    void rounded_rectangle(
+        cv::Mat& src,
+        cv::Point topLeft,
+        cv::Point bottomRight,
+        const cv::Scalar lineColor,
+        const int thickness,
+        const int lineType,
+        const int cornerRadius);
 
 public:
     MainWindow(QWidget *parent = nullptr);

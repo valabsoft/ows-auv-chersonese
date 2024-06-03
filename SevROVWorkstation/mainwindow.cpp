@@ -335,8 +335,68 @@ void MainWindow::setup_camera_connection(CameraConnection connection)
     }
 }
 
+// https://stackoverflow.com/questions/18973103/how-to-draw-a-rounded-rectangle-rectangle-with-rounded-corners-with-opencv
+void MainWindow::rounded_rectangle(
+    cv::Mat& src,
+    cv::Point topLeft,
+    cv::Point bottomRight,
+    const cv::Scalar lineColor,
+    const int thickness,
+    const int lineType,
+    const int cornerRadius)
+{
+     // Сorners:
+     // p1 - p2
+     // |     |
+     // p4 - p3
+
+    cv::Point p1 = topLeft;
+    cv::Point p2 = cv::Point(bottomRight.x, topLeft.y);
+    cv::Point p3 = bottomRight;
+    cv::Point p4 = cv::Point(topLeft.x, bottomRight.y);
+
+    // Draw Straight Lines
+    cv::line(src, cv::Point(p1.x + cornerRadius, p1.y), cv::Point(p2.x - cornerRadius, p2.y), lineColor, thickness, lineType);
+    cv::line(src, cv::Point(p2.x, p2.y + cornerRadius), cv::Point(p3.x, p3.y - cornerRadius), lineColor, thickness, lineType);
+    cv::line(src, cv::Point(p4.x + cornerRadius, p4.y), cv::Point(p3.x-cornerRadius, p3.y), lineColor, thickness, lineType);
+    cv::line(src, cv::Point(p1.x, p1.y + cornerRadius), cv::Point(p4.x, p4.y - cornerRadius), lineColor, thickness, lineType);
+
+    // Draw Arcs
+    cv::ellipse(src, p1 + cv::Point(cornerRadius, cornerRadius), cv::Size(cornerRadius, cornerRadius), 180.0, 0, 90, lineColor, thickness, lineType);
+    cv::ellipse(src, p2 + cv::Point(-cornerRadius, cornerRadius), cv::Size(cornerRadius, cornerRadius), 270.0, 0, 90, lineColor, thickness, lineType);
+    cv::ellipse(src, p3 + cv::Point(-cornerRadius, -cornerRadius), cv::Size(cornerRadius, cornerRadius), 0.0, 0, 90, lineColor, thickness, lineType);
+    cv::ellipse(src, p4 + cv::Point(cornerRadius, -cornerRadius), cv::Size(cornerRadius, cornerRadius), 90.0, 0, 90, lineColor, thickness, lineType);
+}
 void MainWindow::on_video_timer()
 {
+    int X0 = _appSet.CAMERA_WIDTH / 2;
+    int Y0 = _appSet.CAMERA_HEIGHT / 2;
+
+
+    int GRID_SMALL_SIZE = 15;
+    int GRID_BIG_SIZE = 30;
+
+    int GRID_V_DELTA = _appSet.CAMERA_HEIGHT / 75;
+    int GRID_V_MAX = 5;
+
+    int GRID_H_DELTA = _appSet.CAMERA_WIDTH / 100;
+    int GRID_H_MAX = 5;
+
+    int XV0 = _appSet.CAMERA_WIDTH / 5;
+    int YV0 = _appSet.CAMERA_HEIGHT / 2 - GRID_V_DELTA * 2 * 10;
+
+    int XH0 = _appSet.CAMERA_WIDTH / 2 - GRID_H_DELTA * 2 * 10;
+    int YH0 = _appSet.CAMERA_HEIGHT / 10;
+
+    int SIGHT_SIZE = 50;
+    int SIGHT_TICK = 10;
+    int SIGHT_CROSS = 20;
+    int SIGHT_DELTA = 5;
+
+    cv::Mat overlayImage;
+    cv::Mat transparencyiImage;
+    double alpha = 0.5;
+
     cv::Mat resizedMatO;
     cv::Mat resizedMatL;
     cv::Mat resizedMatR;
@@ -360,11 +420,201 @@ void MainWindow::on_video_timer()
 
         cv::cvtColor(resizedMatO, _destinationMatO, cv::COLOR_BGR2RGB);
 
-        _imgCamO = QImage((uchar*) _destinationMatO.data,
-                          _destinationMatO.cols,
-                          _destinationMatO.rows,
-                          _destinationMatO.step,
+        ///////////////////////////////////////////////////////////////////////
+        // Отрисовка прицела
+        ///////////////////////////////////////////////////////////////////////
+        //cv::rectangle(_destinationMatO,
+        //              cv::Point(X0 - SIGHT_SIZE, Y0 - SIGHT_SIZE),
+        //              cv::Point(X0 + SIGHT_SIZE, Y0 + SIGHT_SIZE),
+        //              CV_RGB(255, 255, 255), 1, 0);
+
+        _destinationMatO.copyTo(overlayImage);
+
+        // Внешний контур
+        rounded_rectangle(_destinationMatO,
+                          cv::Point(X0 - SIGHT_SIZE, Y0 - SIGHT_SIZE),
+                          cv::Point(X0 + SIGHT_SIZE, Y0 + SIGHT_SIZE),
+                          CV_RGB(0, 255, 255),
+                          2,
+                          cv::LINE_8,
+                          10);
+
+        // Рисочки внешнего контура
+        cv::line(_destinationMatO,
+                 cv::Point(X0, Y0 - SIGHT_SIZE),
+                 cv::Point(X0, Y0 - SIGHT_SIZE + SIGHT_TICK),
+                 CV_RGB(0, 255, 255),
+                 1,
+                 cv::LINE_8);
+        cv::line(_destinationMatO,
+                 cv::Point(X0, Y0 + SIGHT_SIZE),
+                 cv::Point(X0, Y0 + SIGHT_SIZE - SIGHT_TICK),
+                 CV_RGB(0, 255, 255),
+                 1,
+                 cv::LINE_8);
+        cv::line(_destinationMatO,
+                 cv::Point(X0 - SIGHT_SIZE, Y0 ),
+                 cv::Point(X0 - SIGHT_SIZE + SIGHT_TICK, Y0),
+                 CV_RGB(0, 255, 255),
+                 1,
+                 cv::LINE_8);
+        cv::line(_destinationMatO,
+                 cv::Point(X0 + SIGHT_SIZE, Y0 ),
+                 cv::Point(X0 + SIGHT_SIZE - SIGHT_TICK, Y0),
+                 CV_RGB(0, 255, 255),
+                 1,
+                 cv::LINE_8);
+
+        // Рисочки внутреннего прицела
+        cv::line(_destinationMatO,
+                 cv::Point(X0 - SIGHT_DELTA, Y0),
+                 cv::Point(X0 - SIGHT_DELTA - SIGHT_CROSS, Y0),
+                 CV_RGB(255, 255, 255),
+                 1,
+                 cv::LINE_8);
+        cv::line(_destinationMatO,
+                 cv::Point(X0 + SIGHT_DELTA, Y0),
+                 cv::Point(X0 + SIGHT_DELTA + SIGHT_CROSS, Y0),
+                 CV_RGB(255, 255, 255),
+                 1,
+                 cv::LINE_8);
+
+        cv::line(_destinationMatO,
+                 cv::Point(X0, Y0 - SIGHT_DELTA),
+                 cv::Point(X0, Y0 - SIGHT_DELTA - SIGHT_CROSS),
+                 CV_RGB(255, 255, 255),
+                 1,
+                 cv::LINE_8);
+        cv::line(_destinationMatO,
+                 cv::Point(X0, Y0 + SIGHT_DELTA),
+                 cv::Point(X0, Y0 + SIGHT_DELTA + SIGHT_CROSS),
+                 CV_RGB(255, 255, 255),
+                 1,
+                 cv::LINE_8);
+
+        ///////////////////////////////////////////////////////////////////////
+        // Риски вертикальные (левые)
+        ///////////////////////////////////////////////////////////////////////
+        for (int i = 1; i < GRID_V_MAX; i++)
+        {
+            cv::line(_destinationMatO,
+                     cv::Point(XV0, YV0 + GRID_V_DELTA * 10 * (i - 1)),
+                     cv::Point(XV0 + GRID_BIG_SIZE, YV0 + GRID_V_DELTA * 10 * (i - 1)),
+                     CV_RGB(255, 255, 255),
+                     2,
+                     cv::LINE_8);
+
+            for (int j = 1; j < 10; j++)
+            {
+                cv::line(_destinationMatO,
+                         cv::Point(XV0 + GRID_SMALL_SIZE, YV0 + GRID_V_DELTA * 10 * (i - 1) + j * GRID_V_DELTA),
+                         cv::Point(XV0 + 2 * GRID_SMALL_SIZE, YV0 + GRID_V_DELTA * 10 * (i - 1) + j * GRID_V_DELTA),
+                         CV_RGB(255, 255, 255),
+                         1,
+                         cv::LINE_8);
+            }
+        }
+        // Завершающая
+        cv::line(_destinationMatO,
+                 cv::Point(XV0, YV0 + GRID_V_DELTA * 10 * (GRID_V_MAX - 1)),
+                 cv::Point(XV0 + GRID_BIG_SIZE, YV0 + GRID_V_DELTA * 10 * (GRID_V_MAX - 1)),
+                 CV_RGB(255, 255, 255),
+                 2,
+                 cv::LINE_8);
+
+
+        ///////////////////////////////////////////////////////////////////////
+        // Риски вертикальные (правые)
+        ///////////////////////////////////////////////////////////////////////
+        for (int i = 1; i < GRID_V_MAX; i++)
+        {
+            cv::line(_destinationMatO,
+                     cv::Point(X0 + (X0 - XV0), YV0 + GRID_V_DELTA * 10 * (i - 1)),
+                     cv::Point(X0 + (X0 - XV0) + GRID_BIG_SIZE, YV0 + GRID_V_DELTA * 10 * (i - 1)),
+                     CV_RGB(255, 255, 255),
+                     2,
+                     cv::LINE_8);
+
+            for (int j = 1; j < 10; j++)
+            {
+                cv::line(_destinationMatO,
+                         cv::Point(X0 + (X0 - XV0), YV0 + GRID_V_DELTA * 10 * (i - 1) + j * GRID_V_DELTA),
+                         cv::Point(X0 + (X0 - XV0) + GRID_SMALL_SIZE, YV0 + GRID_V_DELTA * 10 * (i - 1) + j * GRID_V_DELTA),
+                         CV_RGB(255, 255, 255),
+                         1,
+                         cv::LINE_8);
+            }
+        }
+        // Завершающая
+        cv::line(_destinationMatO,
+                 cv::Point(X0 + (X0 - XV0), YV0 + GRID_V_DELTA * 10 * (GRID_V_MAX - 1)),
+                 cv::Point(X0 + (X0 - XV0) + GRID_BIG_SIZE, YV0 + GRID_V_DELTA * 10 * (GRID_V_MAX - 1)),
+                 CV_RGB(255, 255, 255),
+                 2,
+                 cv::LINE_8);
+
+
+        ///////////////////////////////////////////////////////////////////////
+        // Риски горизонтальные
+        ///////////////////////////////////////////////////////////////////////
+        for (int i = 1; i < GRID_H_MAX; i++)
+        {
+            cv::line(_destinationMatO,
+                     cv::Point(XH0 + GRID_H_DELTA * 10 * (i - 1), YH0),
+                     cv::Point(XH0 + GRID_H_DELTA * 10 * (i - 1), YH0 + GRID_BIG_SIZE),
+                     CV_RGB(255, 255, 255),
+                     2,
+                     cv::LINE_8);
+
+            for (int j = 1; j < 10; j++)
+            {
+                cv::line(_destinationMatO,
+                         cv::Point(XH0 + GRID_H_DELTA * 10 * (i - 1) + j * GRID_H_DELTA, YH0 + GRID_SMALL_SIZE),
+                         cv::Point(XH0 + GRID_H_DELTA * 10 * (i - 1) + j * GRID_H_DELTA , YH0 + 2 * GRID_SMALL_SIZE),
+                         CV_RGB(255, 255, 255),
+                         1,
+                         cv::LINE_8);
+            }
+        }
+        // Завершающая
+        cv::line(_destinationMatO,
+                 cv::Point(XH0 + GRID_H_DELTA * 10 * (GRID_H_MAX - 1), YH0),
+                 cv::Point(XH0 + GRID_H_DELTA * 10 * (GRID_H_MAX - 1), YH0 + GRID_BIG_SIZE),
+                 CV_RGB(255, 255, 255),
+                 2,
+                 cv::LINE_8);
+        ///////////////////////////////////////////////////////////////////////
+        // Табличка
+        cv::rectangle(_destinationMatO,
+                      cv::Point(XV0, _appSet.CAMERA_HEIGHT - 50),
+                      cv::Point(X0 + (X0 - XV0) + GRID_BIG_SIZE, _appSet.CAMERA_HEIGHT - 100),
+                      CV_RGB(255, 255, 255), 2, cv::LINE_8);
+        cv::rectangle(_destinationMatO,
+                      cv::Point(XV0, _appSet.CAMERA_HEIGHT - 50),
+                      cv::Point(X0 + (X0 - XV0) + GRID_BIG_SIZE, _appSet.CAMERA_HEIGHT - 100),
+                      CV_RGB(0, 0, 0), -1);
+
+        ///////////////////////////////////////////////////////////////////////
+        // Диагностика
+
+        cv::putText(_destinationMatO, "DIAGNOSTIC: 0.00 [-]; 0.00 [-] " + QTime::currentTime().toString("hh:mm:ss").toStdString(), cv::Point(XV0 + 20, _appSet.CAMERA_HEIGHT - 65), cv::FONT_HERSHEY_SIMPLEX, 1, CV_RGB(255, 255, 255), 2);
+        ///////////////////////////////////////////////////////////////////////
+        // Склейка
+        cv::addWeighted(overlayImage, alpha, _destinationMatO, 1 - alpha, 0, transparencyiImage);
+        ///////////////////////////////////////////////////////////////////////
+
+        _imgCamO = QImage((uchar*) transparencyiImage.data,
+                          transparencyiImage.cols,
+                          transparencyiImage.rows,
+                          transparencyiImage.step,
                           QImage::Format_RGB888);
+
+
+        //_imgCamO = QImage((uchar*) _destinationMatO.data,
+        //                  _destinationMatO.cols,
+        //                  _destinationMatO.rows,
+        //                  _destinationMatO.step,
+        //                  QImage::Format_RGB888);
 
         ui->lbCamera->setPixmap(QPixmap::fromImage(_imgCamO));
         break;
